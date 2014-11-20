@@ -1,0 +1,22 @@
+(begin
+	(define len (lambda (a)
+		(if (= Nil (car a))
+			(quote 0)
+			(+ 1 (len (cdr a))))))
+
+	(define reverse (lambda (a)
+		(if (= 1 (len a))
+			(car a)
+			(cons (reverse (cdr a)) (car a)))))
+
+	(define map (lambda (x fn)
+		(if (= 1 (len x))
+			(fn (car x))
+			(cons (fn (car x)) (map (cdr x) fn)))))
+
+	(define filter (lambda (x fn)
+		(if (= 0 (len x))
+			(quote ())
+			(if (fn (car x))
+				(cons (car x) (filter (cdr x) fn))
+				(filter (cdr x) fn))))))
