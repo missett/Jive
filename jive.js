@@ -169,35 +169,24 @@ function evaluate(expression, scope) {
  
 	}
 }
- 
-var Globals = {
-	'True' : true,
-	'False': false,
-	'Nil'  : null,
 
-	'=': function(a, b) { return a === b; },
-	'>': function(a, b) { return a > b; },
-	'<': function(a, b) { return a < b; },
- 
-	'+': function()     { return Array.prototype.slice.call(arguments).reduce(function(a, b) { return a+b; }); },
-	'-': function()     { return Array.prototype.slice.call(arguments).reduce(function(a, b) { return a-b; }); },
-	'*': function()     { return Array.prototype.slice.call(arguments).reduce(function(a, b) { return a*b; }); },
-	'/': function(a, b) { return a / b; },
-	'%': function(a, b) { return a % b;	},
 
-	'log': function(input) { console.log(input); },
+var fs     = require('fs'),
+	core   = require('./core/core.js'),
+	module = require('./core/module.js').module;
 
-	'cons': function(a, b) { return a instanceof Array ? a.concat(b) : [a].concat(b); },
-	'car' : function(a)    { return a[0] || null; },
-	'cdr' : function(a)    { return a.slice(1); }
-};
+var GlobalScope = new Scope(null, core.Core);
 
-var fs = require('fs');
+[
+	module('stdlib/stdlib.ji')
+].forEach(function(lib) {
+	evaluate(parse(lib)[0], GlobalScope);
+});
 
-fs.readFile('stdlib.ji', {encoding: 'utf-8'}, function(err, data) {
+fs.readFile('src/script.ji', {encoding: 'utf-8'}, function(err, data) {
 	if(err) throw err;
 
-	var r = evaluate( parse(data)[0], new Scope(null, Globals) );
+	var r = evaluate( parse(data)[0], GlobalScope );
 
 	console.log(r);
 });
