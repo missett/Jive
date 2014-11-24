@@ -1,3 +1,5 @@
+/* SCOPE CLASS */
+
 function Scope(parent, symbols) {
 	this.parent  = parent;
 	this.symbols = symbols;
@@ -27,24 +29,46 @@ Scope.prototype.set = function(key, val) {
 	this.symbols[key] = val;
 	return true;
 };
- 
-function isNumericLiteral(input) {
-	return isNaN(parseFloat(input)) ? false : true;
+
+/* LITERAL CLASSES */
+
+function JString(value) {
+	this.value = value;
 }
- 
-function isStringLiteral(input) {
-	var i = input.indexOf('\'') === 0                  || input.indexOf('\"') === 0,
-		j = input.lastIndexOf('\'') === input.length-1 || input.lastIndexOf('\"') === input.length-1;
+
+JString.prototype.get = function() {
+	return this.value.slice(1,this.value.length-1);
+};
+
+JString.prototype.try = function(value) {
+	var i = value.indexOf('\'') === 0                  || value.indexOf('\"') === 0,
+		j = value.lastIndexOf('\'') === value.length-1 || value.lastIndexOf('\"') === value.length-1;
  
 	return i && j ? true : false;
+};
+
+function JNumber(value) {
+	this.value = parseFloat(value);
 }
- 
+
+JNumber.prototype.get = function() {
+	return this.value;
+};
+
+JNumber.prototype.try = function(value) {
+	return isNaN(parseFloat(value)) ? false : true;
+};
+
 function isLiteral(input) {
-	return isNumericLiteral(input) || isStringLiteral(input);
+	return JString.prototype.try(input) || JNumber.prototype.try(input);
 }
 
 function getLiteral(input) {
-	return isNaN(parseFloat(input)) ? input : parseFloat(input);
+	if(JString.prototype.try(input))
+		return new JString(input);
+
+	if(JNumber.prototype.try(input))
+		return new JNumber(input);
 }
  
 function parse(input) {
@@ -108,18 +132,41 @@ function parse(input) {
  
 	return descend(input);
 }
- 
+
+// If we're quoting an expression then we actually want to return the values contained in the wrapper objects
+function extract(input) {
+	if(input instanceof Array) {
+		return input.map(extract);
+	} else if(input instanceof JString || input instanceof JNumber) {
+		return input.get();
+	} else {
+		return input;
+	}
+
+}
+
 function evaluate(expression, scope) {
 	var key, val, test, then, els, params, expr, result, exps;
  
 	if(scope.contains(expression)) {
 		return scope.get(expression);
  
-	} else if(isLiteral(expression)) {
-		return getLiteral(expression);
+	} else if(expression instanceof JString || expression instanceof JNumber) {
+		return expression.get();
 	
+	} else if(expression[0].indexOf('`') === 0) {
+		var moduleName = expression[0].slice(1),
+			module     = require(moduleName),
+			symbols    = {};
+
+		Object.keys(module).forEach(function(key) {
+			symbols[key] = module[key];
+		});
+
+		return evaluate(expression[1], new Scope(scope, symbols));
+
 	} else if(expression[0] === 'quote') {
-		return expression[1];
+		return extract(expression[1]);
 	
 	} else if(expression[0] === 'if') { // (if test then else)
 		test = expression[1];

@@ -1,2 +1,11 @@
 (begin
-	(map (quote (1 2 3 4 5)) (lambda (a) (+ a 1))))
+	(map (quote (1 2 3 4 5)) (lambda (x) (+ x 1)))
+
+	(define fib (lambda (a)
+		(if (< a 1) (quote 1) (+ (fib (- a 1)) (fib (- a 2))))))
+
+	(fib 10)
+
+	(filter (quote (1 2 3 4 5)) (lambda (a) (= (% a 2) 1)))
+
+	(quote (1 2 3 4 5 ("Ryan" "Missett"))))
